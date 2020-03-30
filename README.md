@@ -35,7 +35,7 @@ _Pre-requisites:_
    ```
    amplify init
    ```
-8. Create build file at the project root dir. **amplify.yml**
+8. Create build file at the project root dir. You can find the file **amplify.yml** at **source/** folder
    ```
    version: 0.1
    backend:
@@ -82,12 +82,12 @@ _Pre-requisites:_
 1. Create Test branch and initialize
    ```
    amplify env add
-   amplify env checkout test
    git checkout -b test
+   amplify env checkout test
    git push -u origin test
    amplify push
-   amplify env checkout dev
    git checkout master
+   amplify env checkout dev
    git merge test
    git push
    amplify push
@@ -95,6 +95,65 @@ _Pre-requisites:_
 2. Go to the Amplify console and add the frontend environments with the respective branch
 3. Restrict access for the Amplify Test endpoint
 4. Enable email notification
+
+### Adding Backend Resources and Merging Env
+
+1. Go to the Dev env and branch
+   ```
+   git checkout dev
+   amplify env checkout dev
+   ```
+2. Add authentication with Cognito
+
+   ```
+   amplify add auth
+   ```
+
+   ![auth](./images/Auth.png)
+
+3. Add storage with S3
+
+   ```
+   amplify add storage
+   ```
+
+   ![storage](./images/Storage.png)
+
+4. Push the backend
+   ```
+   amplify push
+   git add .
+   git commit -m "Backend resources"
+   git push
+   ```
+5. Let's modify some files to add functionality for our app (you can find all the ref files at **source/** folder of this repository, just copy it to work)
+   - When working with underlying aws-js-sdk, the “node” package should be included in types compiler option. Update your **src/tsconfig.app.json**
+   - Import the configuration file and load it in **main.ts**
+   - In your app module **src/app/app.module.ts** import the Amplify Module and Service
+   - Modify your **src/index.html**, **src/app/app.component.ts** and **src/app/app.component.html**
+6. Test local
+
+   ```
+   ng build
+   ng serve
+   ```
+
+   ![app](./images/App.png)
+
+7. Push your new code
+   ```
+   git add .
+   git commit -m "Added app func"
+   git push
+   ```
+8. Now, let's merge the dev branch in test branch
+   ```
+   git checkout test
+   amplify env checkout test
+   git merge dev
+   amplify push
+   ```
+9. Try to upload a file without Auth. After, create a user and try to upload again (Check the Web Console to verify the results)
 
 ## Multi Account Approach
 
@@ -125,6 +184,8 @@ _Note: For other Git repositories you already can separate branch by account. Fo
 ## References
 
 - AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+- Amplify CLI: https://aws-amplify.github.io/docs/cli-toolchain/quickstart
+- Angular CLI: https://cli.angular.io/
 - Amplify policy: https://aws-amplify.github.io/docs/cli-toolchain/usage?sdk=js#iam-policy-for-the-cli
 - Getting Started Amplify + Angular: https://aws-amplify.github.io/docs/js/angular
 - Workflow tips: https://read.acloud.guru/multiple-serverless-environments-with-aws-amplify-344759e1be08
