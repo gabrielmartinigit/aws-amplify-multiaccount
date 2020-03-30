@@ -1,0 +1,23 @@
+version: 0.1
+backend:
+  phases:
+    build:
+      commands:
+        - '# Execute Amplify CLI with the helper script'
+        - amplifyPush --simple
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - npm install -g @angular/cli
+    build:
+      commands:
+        - ng build
+  artifacts:
+    baseDirectory: dist/demo-amplify
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

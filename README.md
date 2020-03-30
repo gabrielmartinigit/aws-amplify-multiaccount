@@ -15,10 +15,10 @@ _Pre-requisites:_
 
 ### Creating Repository and First Amplify Push
 
-1. Create Amazon CodeCommit repository;
-2. Create IAM developer user with access to repository and needed AWS resources (E.g.: Amplify, S3, API Gateway, Lambda, etc.);
-3. Create Amplify IAM user for the Amplify CLI and configure as AWS CLI profile;
-4. Clone the repository;
+1. Create Amazon CodeCommit repository
+2. Create IAM developer user with access to repository and needed AWS resources (E.g.: Amplify, S3, API Gateway, Lambda, etc.)
+3. Create Amplify IAM user for the Amplify CLI and configure as AWS CLI profile
+4. Clone the repository
    ```
    git clone your-codecommit-repository
    ```
@@ -31,7 +31,7 @@ _Pre-requisites:_
    ```
    npm install aws-amplify aws-amplify-angular
    ```
-7. Init Angular project
+7. Init Angular project (this will be our Dev environment)
    ```
    amplify init
    ```
@@ -74,27 +74,27 @@ _Pre-requisites:_
     amplify push
     ```
 11. Go to the console https://console.aws.amazon.com/amplify/ and configure Frontend
-12. Create Test & Dev branch and initialize Amplify Test & Dev Env:
-    ```
-    amplify env add
-    git add <files>
-    git commit -m "Test env created."
-    git push -u origin master
-    amplify env add
-    git add <files>
-    git commit -m "Dev env created."
-    git push -u origin master
-    git checkout -b test
-    git push -u origin test
-    git checkout -b dev
-    git push -u origin dev
-    ```
-13. Go to the Amplify console and add the frontend environments with the respective branch;
-14. Restrict access for the Amplify Env endpoints;
-15. Enable email notification for test & production environments.
-16. (Optional) Restrict push to master branch;
+12. Restrict access for the Amplify Dev endpoint
+13. Enable email notification
 
-### Creating Dev & Test Branch/Env
+### Creating Test Branch/Env
+
+1. Create Test branch and initialize
+   ```
+   amplify env add
+   amplify env checkout test
+   git checkout -b test
+   git push -u origin test
+   amplify push
+   amplify env checkout dev
+   git checkout master
+   git merge test
+   git push
+   amplify push
+   ```
+2. Go to the Amplify console and add the frontend environments with the respective branch
+3. Restrict access for the Amplify Test endpoint
+4. Enable email notifications
 
 ## Multi Account Approach
 
