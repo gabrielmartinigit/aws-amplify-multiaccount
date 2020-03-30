@@ -94,7 +94,7 @@ _Pre-requisites:_
    ```
 2. Go to the Amplify console and add the frontend environments with the respective branch
 3. Restrict access for the Amplify Test endpoint
-4. Enable email notifications
+4. Enable email notification
 
 ## Multi Account Approach
 
@@ -112,8 +112,7 @@ _Note: For other Git repositories you already can separate branch by account. Fo
    ```
     # Upload the public key in IAM - SSH keys for AWS CodeCommit;
     # Change the .ssh/config file
-    # Host codecommit
-    #    Hostname git-codecommit.<region>.amazonaws.com
+    # Host git-codecommit.*.amazonaws.com
     #    User <SSH key id>
     #    IdentityFile ~/.ssh/id_rsa
     # Clone the repository
