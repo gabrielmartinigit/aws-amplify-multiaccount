@@ -22,20 +22,24 @@ _Pre-requisites:_
    ```
    git clone your-codecommit-repository
    ```
-5. Create a new Angular project
+5. Create dev branch
+   ```
+   git checkout -b dev
+   ```
+6. Create a new Angular project
    ```
    cd your-codecommit-repository
    ng new demo-amplify --directory ./
    ```
-6. Install Amplify dependecies
+7. Install Amplify dependecies
    ```
    npm install aws-amplify aws-amplify-angular
    ```
-7. Init Angular project (this will be our Dev environment)
+8. Init Angular project (this will be our Dev environment)
    ```
    amplify init
    ```
-8. Create build file at the project root dir. You can find the file **amplify.yml** at **source/** folder
+9. Create build file at the project root dir. You can find the file **amplify.yml** at **source/** folder
    ```
    version: 0.1
    backend:
@@ -61,39 +65,33 @@ _Pre-requisites:_
       paths:
          - node_modules/**/*
    ```
-9. Test build and serve before pushing the code _(if you find the error "Could not find plugin "proposal-numeric-separator"" try to install "@babel/compat-data": "~7.8.0", in devDependencies )_
-   ```
-   ng build
-   ng serve
-   ```
-10. Push the first version
+10. Test build and serve before pushing the code _(if you find the error "Could not find plugin "proposal-numeric-separator"" try to install "@babel/compat-data": "~7.8.0", in devDependencies )_
+    ```
+    ng build
+    ng serve
+    ```
+11. Push the first version
     ```
     git add .
     git commit -m "Initial commit"
-    git push -u origin master
+    git push -u origin dev
     amplify push
     ```
-11. Go to the console https://console.aws.amazon.com/amplify/ and configure Frontend
-12. Restrict access for the Amplify Dev endpoint
-13. Enable email notification
+12. Go to the console https://console.aws.amazon.com/amplify/ and configure Frontend
+13. Restrict access for the Amplify Dev endpoint
 
-### Creating Test Branch/Env
+### Creating Stage Branch/Env
 
-1. Create Test branch and initialize
+1. Create Stage branch and initialize
    ```
    amplify env add
-   git checkout -b test
-   amplify env checkout test
-   git push -u origin test
-   amplify push
-   git checkout master
-   amplify env checkout dev
-   git merge test
-   git push
+   git checkout -b stage
+   amplify env checkout stage
+   git push -u origin stage
    amplify push
    ```
 2. Go to the Amplify console and add the frontend environments with the respective branch
-3. Restrict access for the Amplify Test endpoint
+3. Restrict access for the Amplify Stage endpoint
 4. Enable email notification
 
 ### Adding Backend Resources and Merging Env
@@ -143,23 +141,98 @@ _Pre-requisites:_
 7. Push your new code
    ```
    git add .
-   git commit -m "Added app func"
+   git commit -m "Added auth and storage features"
    git push
    ```
-8. Now, let's merge the dev branch in test branch
+8. Now, let's merge the dev branch in stage branch
    ```
-   git checkout test
-   amplify env checkout test
+   git checkout stage
+   amplify env checkout stage
    git merge dev
    amplify push
    ```
 9. Try to upload a file without Auth. After, create a user and try to upload again (Check the Web Console to verify the results)
 
-## Multi Account Approach
+## Multi Account Approach - Moving to Production Account
 
-Actually (02/05/2020), Amplify not supports multi-account approach utilizing CodeCommit, but, if would like to copy the project for another account you can replicate & sync the CodeCommit repository between accounts.
+Actually (04/23/2020), Amplify not supports multi-account approach utilizing CodeCommit, but, if would like to utilize a multi account approach we work with CodeBuild as explained bellow:
 
 _Note: For other Git repositories you already can separate branch by account. For example, with GitHub._
+
+1. Creat amplify prod env
+   ```
+   amplify env add # utilizes an AWS CLI profile for production account
+   git checkout master
+   git merge stage
+   amplify env checkout prod
+   amplify hosting add
+   git push origin master
+   ```
+
+### Account A (Prod)
+
+1. Create an IAM Role with the Amplify policies (follow the reference _Amplify Policy_)
+2. Add the trust relationship with the Account B
+   ```
+   {
+      "Version": "2012-10-17",
+      "Statement": [
+         {
+            "Effect": "Allow",
+            "Principal": {
+            "AWS": "arn:aws:iam::<YOUR ACCOUNT B ID>:root"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {}
+         }
+      ]
+   }
+   ```
+
+### Account B (Dev/Stages)
+
+1. Create an IAM Policy to assume Account A role
+   ```
+   {
+      "Version": "2012-10-17",
+      "Statement": {
+         "Effect": "Allow",
+         "Action": "sts:AssumeRole",
+         "Resource": "arn:aws:iam::<YOUR ACCOUNT A ID>:role/<PROD ROLE>"
+      }
+   }
+   ```
+2. Create IAM role with CodeBuild access and attach the policy created in the last step
+3. Add the trust relationship with CodeBuild
+   ```
+   {
+      "Version": "2012-10-17",
+      "Statement": [
+         {
+            "Effect": "Allow",
+            "Principal": {
+            "Service": "codebuild.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+         }
+      ]
+   }
+   ```
+4. Create the CodeBuild project with the role created in the step before and associate with the production CodeCommit branch
+5. Add the **source/buildspec.yml** file in your project (modify the account id in the file)
+6. Push the build settings and do the first prod deploy
+   ```
+   git checkout master
+   amplify env checkout prod
+   amplify publish
+   git add .
+   git commit -m "New CodeBuild file"
+   git push origin master
+   ```
+7. Verify the project with the S3 url (if you receive some 4XX error, you need to change the _outputPath value in the angular.json_ to build in the right path)
+8. Create CodePipeline with CodeCommit as source and CodeBuild as build stage
+   ![cicd](images/Pipeline.png)
+9. Now you have a ci/cd pipeline multi-account with Amplify!
 
 ## Developers Tips
 
@@ -177,9 +250,9 @@ _Note: For other Git repositories you already can separate branch by account. Fo
     # Clone the repository
     git clone codecommit:/v1/repos/<repository>
    ```
-3. Sometimes when you run **amplify remove** some resources still in the account. Verify if the resource is deleted and if needed remove manually (E.g.: S3 Bucket);
+3. Sometimes when you run **amplify remove** some resources still in the account. Verify if the resource is deleted and if needed remove manually (E.g.: CloudFormation and S3 Bucket);
 4. Working with different environments:
-   ![dad](images/AmplifyEnvAddDeploySwitching.jpg)
+   ![switching](images/AmplifyEnvAddDeploySwitching.jpg)
 
 ## References
 
@@ -191,4 +264,4 @@ _Note: For other Git repositories you already can separate branch by account. Fo
 - Workflow tips: https://read.acloud.guru/multiple-serverless-environments-with-aws-amplify-344759e1be08
 - Limit pushes and merges to branches: https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-conditional-branch.html
 - Starting from existing project: https://aws.amazon.com/blogs/mobile/amplify-cli-adds-scaffolding-support-for-amplify-apps-and-authoring-plugins/
-- Replicating CodeCommit repository: https://aws.amazon.com/blogs/devops/replicate-aws-codecommit-repository-between-regions-using-aws-fargate/
+- AWS Multi Account pipelines: https://aws.amazon.com/blogs/devops/aws-building-a-secure-cross-account-continuous-delivery-pipeline/
