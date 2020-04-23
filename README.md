@@ -1,6 +1,4 @@
-# AWS Amplify Angular Demo
-
-Amplify environment demonstration
+# AWS Amplify Multi-account Angular Demo
 
 ![AWS Architecture](images/Amplify.jpg)
 
