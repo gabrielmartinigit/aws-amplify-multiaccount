@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - apt-get update -y
+      - apt-get install awscli -y
+    runtime-versions:
+      nodejs: 10
+  pre_build:
+    commands:
+      - npm install -g @angular/cli
+      - npm install -g @aws-amplify/cli
+      - mkdir ~/.aws
+      - AMPLIFY_CICD_AWS=$(aws sts assume-role --role-arn "arn:aws:iam::<YOUR ACCOUNT>:role/production-access-crossaccount" --role-session-name "amplify")
+      - TEMP_AccessKeyId=$(echo $AMPLIFY_CICD_AWS | jq '.["Credentials"]["AccessKeyId"]' -r)
+      - TEMP_SecretAccessKey=$(echo $AMPLIFY_CICD_AWS | jq '.["Credentials"]["SecretAccessKey"]' -r)
+      - TEMP_Token=$(echo $AMPLIFY_CICD_AWS | jq '.["Credentials"]["SessionToken"]' -r)
+      - echo "[default]" >> ~/.aws/credentials
+      - echo "aws_access_key_id=${TEMP_AccessKeyId}" >> ~/.aws/credentials
+      - echo "aws_secret_access_key=${TEMP_SecretAccessKey}" >> ~/.aws/credentials
+      - echo "aws_session_token=${TEMP_Token}" >> ~/.aws/credentials
+      - echo "[default]" >> ~/.aws/config
+      - echo "region=us-east-1" >> ~/.aws/config
+      - echo "output=json" >> ~/.aws/config
+  build:
+    commands:
+      - AWSCONFIG="{\"configLevel\":\"project\",\"useProfile\":true,\"profileName\":\"default\"}"
+      - AMPLIFY="{\"envName\":\"<YOUR PRODUCTION AMPLIFY ENV>\"}"
+      - PROVIDERS="{\"awscloudformation\":${AWSCONFIG}}"
+      - CODEGEN="{\"generateCode\":false,\"generateDocs\":false}"
+      - amplify init --amplify ${AMPLIFY} --providers ${PROVIDERS} --codegen ${CODEGEN} -y
+      - npm install
+      - amplify publish -y
+  post_build:
+    commands:
+      - echo Build completed!
